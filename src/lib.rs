@@ -3,15 +3,14 @@ use rand::thread_rng;
 use rand::seq::SliceRandom;
 use rayon::prelude::*; 
 
-fn generate_sample(
+fn generate_sample_pool(
     total_features:usize
     , subsample_amt:usize
     , n_estimators:usize
 ) -> Array2<u32>{
     let mut sample_pool:Array2<u32> = Array2::from_elem((n_estimators, total_features), 0);
-    
+    let mut vec:Vec<usize> = (0..total_features).collect();
     for mut v in sample_pool.axis_iter_mut(Axis(0)) {
-        let mut vec:Vec<usize> = (0..total_features).collect();
         vec.shuffle(&mut thread_rng());
         for i in 0..total_features {
             v[i] = (vec[i] < subsample_amt) as u32
@@ -20,22 +19,22 @@ fn generate_sample(
     sample_pool
 }
 
-fn generate_sample_2(
-    total_features:usize
-    , subsample_amt:usize
-    , n_estimators:usize
-) -> Array2<u32>{
-    let mut sample_pool:Array2<u32> = Array2::from_elem((n_estimators, total_features), 0);
-
-    sample_pool.axis_iter_mut(Axis(0)).par_bridge().for_each(|mut v|{
-        let mut vec:Vec<usize> = (0..total_features).collect();
-        vec.shuffle(&mut thread_rng());
-        for i in 0..total_features {
-            v[i] = (vec[i] < subsample_amt) as u32
-        }
-    });
-    sample_pool
-}
+// fn generate_sample_2(
+//     total_features:usize
+//     , subsample_amt:usize
+//     , n_estimators:usize
+// ) -> Array2<u32>{
+//     let mut sample_pool:Array2<u32> = Array2::from_elem((n_estimators, total_features), 0);
+    
+//     sample_pool.axis_iter_mut(Axis(0)).par_bridge().for_each(|mut v|{
+//         let mut vec:Vec<usize> = (0..total_features).collect();
+//         vec.shuffle(&mut thread_rng());
+//         for i in 0..total_features {
+//             v[i] = (vec[i] < subsample_amt) as u32
+//         }
+//     });
+//     sample_pool
+// }
 
 fn monte_carlo_prob_est(
     n_trials:usize
@@ -46,7 +45,7 @@ fn monte_carlo_prob_est(
 ) -> f32 {
     let mut count:u32 = 0;
     for _ in 0..n_trials {
-        let times:Array1<u32> = generate_sample(total_features, subsample_amt, n_estimators)
+        let times:Array1<u32> = generate_sample_pool(total_features, subsample_amt, n_estimators)
             .sum_axis(Axis(0));
         
         let mut success:u32 = 1;
@@ -68,7 +67,7 @@ fn _one_trial(
     , n_estimators:usize
     , n_times:u32
 ) -> u32 {
-    let times:Array1<u32> = generate_sample(total_features, subsample_amt, n_estimators)
+    let times:Array1<u32> = generate_sample_pool(total_features, subsample_amt, n_estimators)
     .sum_axis(Axis(0));
     let mut success:u32 = 1;
     for x in times.into_iter() {
