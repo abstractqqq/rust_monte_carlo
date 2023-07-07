@@ -1,9 +1,9 @@
 use rust_monte_carlo::run_experiment;
 
 fn main(){
-    let target_times:u32 = 6;
+    let target_times:u32 = 3;
     let total_features:usize = 100;
-    let subsample_amt:usize = 60;
+    let subsample_amt:usize = 10;
     let n_trials:usize = 500;
     let threshold:f32 = 0.95;
     let n:usize = run_experiment(

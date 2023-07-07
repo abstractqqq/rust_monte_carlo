@@ -7,7 +7,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     // let total_features:usize = 10;
     // let subsample_amt:usize = 6;
     c.bench_function("run monte carlo experiment", |b| b.iter(|| 
-        run_experiment(6,100,60,500,0.95)
+        run_experiment(3,100,10,500,0.95)
     ));
 }
 

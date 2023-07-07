@@ -20,6 +20,23 @@ fn generate_sample(
     sample_pool
 }
 
+fn generate_sample_2(
+    total_features:usize
+    , subsample_amt:usize
+    , n_estimators:usize
+) -> Array2<u32>{
+    let mut sample_pool:Array2<u32> = Array2::from_elem((n_estimators, total_features), 0);
+
+    sample_pool.axis_iter_mut(Axis(0)).par_bridge().for_each(|mut v|{
+        let mut vec:Vec<usize> = (0..total_features).collect();
+        vec.shuffle(&mut thread_rng());
+        for i in 0..total_features {
+            v[i] = (vec[i] < subsample_amt) as u32
+        }
+    });
+    sample_pool
+}
+
 fn monte_carlo_prob_est(
     n_trials:usize
     , total_features:usize
@@ -44,6 +61,7 @@ fn monte_carlo_prob_est(
     return count as f32 / n_trials as f32
 }
 
+#[inline]
 fn _one_trial(
     total_features:usize
     , subsample_amt:usize
@@ -69,13 +87,13 @@ fn par_monte_carlo_prob_est(n_trials:usize
     , n_times:u32
 ) -> f32 {
 
-    let mut results:Vec<u32> = Vec::with_capacity(n_trials);
-    (0..n_trials).into_par_iter()
-    .map(|_| _one_trial(total_features, subsample_amt, n_estimators, n_times))
-    .collect_into_vec(&mut results);
+    // let mut results:Vec<u32> = Vec::with_capacity(n_trials);
+    let success_count:u32 = (0..n_trials).into_par_iter()
+        .map(|_| _one_trial(total_features, subsample_amt, n_estimators, n_times))
+        .reduce(|| 0, |a,b| a + b);
+    //collect_into_vec(&mut results);
 
-    let successes:u32 = results.into_iter().sum();
-    successes as f32 / n_trials as f32
+    success_count as f32 / n_trials as f32
 }
 
 pub fn run_experiment(
