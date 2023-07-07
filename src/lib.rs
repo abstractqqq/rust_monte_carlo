@@ -65,30 +65,29 @@ fn _one_trial(
     total_features:usize
     , subsample_amt:usize
     , n_estimators:usize
-    , n_times:u32
+    , target_times:u32
 ) -> u32 {
     let times:Array1<u32> = generate_sample_pool(total_features, subsample_amt, n_estimators)
-    .sum_axis(Axis(0));
-    let mut success:u32 = 1;
+                            .sum_axis(Axis(0));
     for x in times.into_iter() {
-        if x < n_times {
-            success = 0;
-            break
+        if x < target_times {
+            return 0
         }
     }
-    success
+    1 // return 1
 }
 
-fn par_monte_carlo_prob_est(n_trials:usize
+fn par_monte_carlo_prob_est(
+    n_trials:usize
     , total_features:usize
     , subsample_amt:usize
     , n_estimators:usize
-    , n_times:u32
+    , target_times:u32
 ) -> f32 {
 
     // let mut results:Vec<u32> = Vec::with_capacity(n_trials);
     let success_count:u32 = (0..n_trials).into_par_iter()
-        .map(|_| _one_trial(total_features, subsample_amt, n_estimators, n_times))
+        .map(|_| _one_trial(total_features, subsample_amt, n_estimators, target_times))
         .reduce(|| 0, |a,b| a + b);
     //collect_into_vec(&mut results);
 
@@ -109,7 +108,5 @@ pub fn run_experiment(
         n_estimators += 1;
         p = par_monte_carlo_prob_est(n_trials, total_features, subsample_amt, n_estimators, target_times);
     }
-
     n_estimators
-
 }
